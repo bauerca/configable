@@ -9,7 +9,7 @@ except:
 
 setup(
     name='configable',
-    version='0.1',
+    version='0.1.1',
     packages=['configable'],
     test_suite='tests',
     author='Carl A. Bauer',
