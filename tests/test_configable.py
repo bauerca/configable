@@ -83,30 +83,30 @@ class Test(unittest.TestCase):
         c = C({})
         runner.assertEqual(c['mighty'], 'boosh')
 
-    def test_nested_configable(runner):
+    def testselfnestedselfconfigable(runner):
         class Father(Configable):
             @setting(required=True)
-            def name(_, value):
+            def name(self, value):
                 # family.mom should be initialized before this handler
                 # is called.
-                runner.assertEqual(_.parent()['mom']['name'], 'Lois')
+                runner.assertEqual(self.parent()['mom']['name'], 'Lois')
                 pass
 
         class Mother(Configable):
             @setting(required=True)
-            def name(_, value):
+            def name(self, value):
                 # family.mom should be initialized before this handler
                 # is called.
-                runner.assertEqual(_.parent()['dad']['name'], 'Hal')
+                runner.assertEqual(self.parent()['dad']['name'], 'Hal')
                 pass
 
         class Family(Configable):
             @setting(kind=Father)
-            def dad(_, value):
+            def dad(self, value):
                 # dad should exist and be initialized before this
                 # handler is called.
-                runner.assertEqual(_['dad']['name'], 'Hal')
-                runner.assertEqual(_['mom']['name'], 'Lois')
+                runner.assertEqual(self['dad']['name'], 'Hal')
+                runner.assertEqual(self['mom']['name'], 'Lois')
                 pass
 
         fam = Family({
@@ -116,20 +116,21 @@ class Test(unittest.TestCase):
 
     def test_configable_inheritance(runner):
         class Animal(Configable):
-            SUBTYPE_PROPERTY = 'species'
             def goes(self):
                 raise NotImplementedError
 
         class Cat(Animal):
+            SUBTYPE = {'species': 'cat'}
             def goes(self):
                 return 'mew'
 
         class Dog(Animal):
-            SUBTYPE_PROPERTY = 'breed'
+            SUBTYPE = {'species': 'dog'}
             def goes(self):
                 return 'wuf'
 
         class Husky(Dog):
+            SUBTYPE = {'breed': 'husky'}
             def goes(self):
                 return 'owww'
 
@@ -161,15 +162,13 @@ class Test(unittest.TestCase):
 
     def test_configable_map(runner):
         class Dog(Configable):
-            SUBTYPE_PROPERTY = 'breed'
-
             @setting(required=True)
             def size(self, value):
                 self.dog_size = value
                 pass
 
         class Husky(Dog):
-            SUBTYPE = 'husky'
+            SUBTYPE = {'breed': 'husky'}
 
         class DogMap(ConfigableMap):
             """
@@ -200,8 +199,6 @@ class Test(unittest.TestCase):
 
     def test_configable_array(runner):
         class Dog(Configable):
-            SUBTYPE_PROPERTY = 'breed'
-
             @setting(required=True)
             def name(self, value):
                 self.dog_name = value
@@ -211,7 +208,7 @@ class Test(unittest.TestCase):
                 self.dog_size = value
 
         class Husky(Dog):
-            SUBTYPE = 'husky'
+            SUBTYPE = {'breed': 'husky'}
 
         class Dogs(ConfigableArray):
             TYPE = Dog

@@ -138,12 +138,6 @@ What a delightfully pointless library. The only thing Configable is really
 helping with is some requirement and type checking all wrapped up in some
 fancy decorator syntax.
 
-A Configable is a Python `dict` which is immediately populated with all of the
-properties passed in at instantiation. Each function that is
-
-It then does some validation on those
-
-
 You usually don't override `__init__` in a `Configable` subclass. A
 `Configable` expects to be initialized by a python dictionary, which was
 probably loaded from a config file.
@@ -201,7 +195,7 @@ class Car(Configable):
         pass
 
 class ElectricCar(Car):
-    SUBTYPE = 'electric'
+    SUBTYPE = {'type': 'electric'}
 
     @setting(required=True, kind=float)
     def fuel_efficiency(self, value):

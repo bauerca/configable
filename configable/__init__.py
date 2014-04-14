@@ -10,14 +10,10 @@ class Configable(dict, ConfigableBase):
     A Configable is subclass aware (with a little help)! Given
 
         class Animal(Configable):
-            SUBTYPE_PROPERTY = 'species'
+            pass
 
         class Dog(Animal):
-            SUBTYPE = 'dog' # unnecessary b/c Configable automatically
-                            # checks for 'Dog'.lower() if SUBTYPE is not
-                            # defined. Should probably set this to
-                            # 'canis lupus familiaris' anyway... ~@~
-            SUBTYPE_PROPERTY = 'breed'
+            SUBTYPE = {'species': 'dog'}
 
     The following config will produce a Dog instance:
 
@@ -32,7 +28,7 @@ class Configable(dict, ConfigableBase):
     The inheritance can go on...
 
         class Husky(Dog):
-            SUBTYPE = 'husky'
+            SUBTYPE = {'breed': 'husky'}
 
         husky = Animal({
             'species': 'dog',
@@ -43,14 +39,16 @@ class Configable(dict, ConfigableBase):
     def __new__(cls, config, _is_root=True):
         """
         """
-        # Check if this Configable expects there to be subtypes
-        subtype_property = getattr(cls, 'SUBTYPE_PROPERTY', None)
-
-        if subtype_property is not None and subtype_property in config:
-            config_subtype = config[subtype_property]
-            for subcls in cls.__subclasses__():
-                subtype = getattr(subcls, 'SUBTYPE', subcls.__name__.lower())
-                if subtype == config_subtype:
+        for subcls in cls.__subclasses__():
+            subtype = getattr(subcls, 'SUBTYPE', None)
+            if isinstance(subtype, dict):
+                match = True
+                for name, value in subtype.iteritems():
+                    config_value = config.get(name)
+                    if value != config_value:
+                        match = False
+                        break
+                if match:
                     # The following should call this __new__ again with
                     # cls == subcls.
                     return subcls(config, _is_root=_is_root)
