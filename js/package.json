@@ -1,0 +1,25 @@
+{
+  "name": "configable",
+  "version": "0.1.2",
+  "description": "Don't repeat yourself. Configure everything.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -C"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bauerca/configable"
+  },
+  "keywords": [
+    "configuration"
+  ],
+  "author": "Carl A. Bauer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bauerca/configable/issues"
+  },
+  "homepage": "https://github.com/bauerca/configable",
+  "devDependencies": {
+    "expect.js": "^0.3.1"
+  }
+}

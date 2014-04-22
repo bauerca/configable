@@ -1,15 +1,31 @@
 import unittest
-from configable import Configable, ConfigableMap, ConfigableArray, setting
+from configable import Configable, ConfigableMap, ConfigableArray, setting, issetting
+import inspect
+from pprint import pprint
 
 class Test(unittest.TestCase):
     def test_simple(runner):
         class C(Configable):
+            a = setting()
+
+        class D(C):
+            b = setting()
+
+        pprint(inspect.getmembers(D, predicate=issetting))
+
+        c = C({'a': 1})
+        runner.assertEqual(c.a, 1)
+
+    def test_simple_with_callback(runner):
+        class C(Configable):
             @setting()
             def a(self, value):
+                self.b = value
                 pass
 
         s = C({'a': 1})
-        runner.assertTrue(s['a'] == 1)
+        runner.assertTrue(s.a == 1)
+        runner.assertTrue(s.b == 1)
 
     def test_missing_optional_attr(runner):
         class C(Configable):
@@ -18,7 +34,7 @@ class Test(unittest.TestCase):
                 runner.assertIs(value, None)
 
         c = C({})
-        runner.assertIs(c.get('a'), None)
+        runner.assertIs(c.a, None)
 
     def test_missing_required_attr(runner):
         class C(Configable):
@@ -40,32 +56,15 @@ class Test(unittest.TestCase):
                 pass
 
         c = C({'a': 1, 'b': 2})
-        runner.assertEqual(c['a'], 1)
-        runner.assertEqual(c['b'], 2)
-
-    def test_cross_ref_attr(runner):
-        class C(Configable):
-            @setting()
-            def a(self, value):
-                # b should be loaded before any handlers are called.
-                self.b_from_a = self.get('b')
-                pass
-
-            @setting()
-            def b(self, value):
-                pass
-
-        c = C({'a': 1, 'b': 2})
-        runner.assertEqual(c['a'], 1)
-        runner.assertEqual(c['b'], 2)
-        runner.assertEqual(c.b_from_a, 2)
+        runner.assertEqual(c.a, 1)
+        runner.assertEqual(c.b, 2)
 
     def test_type_cast(runner):
         class C(Configable):
             @setting(kind=bool)
-            def a(cls, value):
+            def a(self, value):
                 runner.assertIsInstance(value, bool)
-                runner.assertIsInstance(cls['a'], bool)
+                runner.assertIsInstance(self.a, bool)
         
         c = C({'a': 1})
 
@@ -81,34 +80,24 @@ class Test(unittest.TestCase):
                 pass
 
         c = C({})
-        runner.assertEqual(c['mighty'], 'boosh')
+        runner.assertEqual(c.mighty, 'boosh')
 
-    def testselfnestedselfconfigable(runner):
+    def test_nested_configable(runner):
         class Father(Configable):
-            @setting(required=True)
-            def name(self, value):
-                # family.mom should be initialized before this handler
-                # is called.
-                runner.assertEqual(self.parent()['mom']['name'], 'Lois')
-                pass
+            name = setting(required=True)
 
         class Mother(Configable):
-            @setting(required=True)
-            def name(self, value):
-                # family.mom should be initialized before this handler
-                # is called.
-                runner.assertEqual(self.parent()['dad']['name'], 'Hal')
-                pass
+            name = setting(required=True)
 
         class Family(Configable):
             @setting(kind=Father)
-            def dad(self, value):
-                # dad should exist and be initialized before this
-                # handler is called.
-                runner.assertEqual(self['dad']['name'], 'Hal')
-                runner.assertEqual(self['mom']['name'], 'Lois')
-                pass
+            def dad(self, dad):
+                runner.assertEqual(dad.name, 'Hal')
 
+            @setting(kind=Mother)
+            def mom(self, mom):
+                runner.assertEqual(mom.name, 'Lois')
+                
         fam = Family({
             'dad': {'name': 'Hal'},
             'mom': {'name': 'Lois'}
@@ -189,12 +178,12 @@ class Test(unittest.TestCase):
 
         gracie = dogs['gracie']
         runner.assertIsInstance(gracie, Dog)
-        runner.assertEqual(gracie['size'], 'medium')
+        runner.assertEqual(gracie.size, 'medium')
         runner.assertEqual(gracie.dog_size, 'medium')
 
         sparky = dogs['sparky']
         runner.assertIsInstance(sparky, Husky)
-        runner.assertEqual(sparky['size'], 'large')
+        runner.assertEqual(sparky.size, 'large')
         runner.assertEqual(sparky.dog_size, 'large')
 
     def test_configable_array(runner):
@@ -228,12 +217,12 @@ class Test(unittest.TestCase):
 
         gracie = dogs[0]
         runner.assertIsInstance(gracie, Dog)
-        runner.assertEqual(gracie['name'], 'gracie')
-        runner.assertEqual(gracie['size'], 'medium')
+        runner.assertEqual(gracie.name, 'gracie')
+        runner.assertEqual(gracie.size, 'medium')
         runner.assertEqual(gracie.dog_size, 'medium')
 
         sparky = dogs[1]
         runner.assertIsInstance(sparky, Husky)
-        runner.assertEqual(sparky['name'], 'sparky')
-        runner.assertEqual(sparky['size'], 'large')
+        runner.assertEqual(sparky.name, 'sparky')
+        runner.assertEqual(sparky.size, 'large')
         runner.assertEqual(sparky.dog_size, 'large')

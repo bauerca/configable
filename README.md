@@ -106,6 +106,9 @@ Configable adds candy like type checking and inheritance.
 
 ## Tutorials
 
+- [Javascript](js)
+- [Python](python)
+
 ### Python
 
 Let's see what Configable actually does for you in Python (the only language
