@@ -123,6 +123,7 @@ class setting(object):
         self.choices = choices
         self.init = None
         self.name = str(id(self))
+        self.decorator = False
 
     def __set__(self, obj, value):
         if value is None and self.required:
@@ -153,9 +154,13 @@ class setting(object):
             return self.default
         return value
 
-    def __call__(self, init):
-        self.name = init.__name__
-        self.init = init
+    def __call__(self, initOrObj, value=None):
+        if self.decorator:
+            self.init(initOrObj, value)
+            return
+        self.name = initOrObj.__name__
+        self.init = initOrObj
+        self.decorator = True
         return self
 
 

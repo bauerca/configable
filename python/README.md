@@ -199,16 +199,30 @@ class Type(Configable):
 The decorated function will be called immediately before the value is
 set on the instance (after [kind](#kind-callable) is called).
 You should *not* try to access other settings from inside this
-function as they may not have been loaded yet.
+function as they may not have been loaded yet. If you need to call the parent
+class decorated function, you must use the following syntax,
+
+```python
+class Parent(Configable):
+    @setting()
+    def name(self, value):
+        self.capname = value.upper()
+
+class Child(Parent):
+    @setting()
+    def name(self, value):
+        Parent.name(self, value) # MUST USE THIS SYNTAX
+        print self.capname
+```
 
 The following are short explanations of the setting options.
 
-#### required {bool}
+#### `required {bool}`
 
 If set to true, instantiation of the containing Configable subclass will fail
 horribly if the setting is undefined on the configuration object.
 
-#### default {\*}
+#### `default {*}`
 
 Pretty self-explanatory. You probably want [required](#required) to be `false` if
 you are supplying a default setting value. The type of the default value should be
@@ -216,12 +230,12 @@ the type expected as a result of applying all setting options. This means
 your default value should be the same type as that returned by application of the
 [parse](#parse-function) or [kind](#kind-function) function, if specified.
 
-#### choices {iterable&lt;\*&gt;}
+#### `choices {iterable<*>}`
 
 If your settings values are restricted to a small set, list them here. Configable
 instantiation will fail if the *raw* value is not in this set.
 
-#### kind {callable}
+#### `kind {callable}`
 
 The raw value from the configuration object is run through this function; therefore,
 it should accept a single value and return the transformed value or throw an

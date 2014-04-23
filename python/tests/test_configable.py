@@ -90,6 +90,18 @@ class Test(unittest.TestCase):
         c = C({})
         runner.assertEqual(c.mighty, 'boosh')
 
+    def test_super_callback(runner):
+        class Person(Configable):
+            @setting()
+            def name(self, value):
+                self.capname = value.upper()
+        class Father(Person):
+            @setting()
+            def name(self, value):
+                Person.name(self, value)
+                runner.assertEqual(self.capname, value.upper())
+        father = Father({'name': 'Hal'})
+
     def test_nested_configable(runner):
         class Father(Configable):
             name = setting(required=True)
