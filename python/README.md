@@ -153,7 +153,7 @@ ConfigableMap prototype! You get all the benefits of subclass instantiation
 
 Given [ConfigableMap](#configablemap), you should be satisfied with an example,
 
-```js
+```python
 from configable import Configable, ConfigableArray, setting
 
 class Dog(Configable):
@@ -177,7 +177,7 @@ Call this and assign the result to a property on your Configable subclass
 (see numerous examples above). Generically (where
 shown option values are the defaults),
 
-```js
+```python
 class Type(Configable):
     setting_name = setting(
         required=False, # Boolean
@@ -190,7 +190,7 @@ class Type(Configable):
 
 Additionally, you can use `setting` as a decorator.
 
-```js
+```python
 class Type(Configable):
     @setting(
         required=False, # Boolean
