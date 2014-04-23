@@ -1,3 +1,9 @@
+import sys
+
+# Make sure we can access configable from install
+if '.' not in sys.path:
+    sys.path.append('.')
+
 from configable import Configable, setting
 from setuptools import setup
 import os
@@ -30,16 +36,15 @@ class Setup(Configable):
             author_email=self.email,
             description=self.description,
             license=self.license,
-            keywords=' '.join(self.keywords),
+            keywords=self.keywords,
             url=url,
             long_description=long_desc
         )
 
 
 def main():
-    pkg_file = './global-pkg.json'
     pkg_file = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), pkg_file)
+        os.path.join(os.path.dirname(__file__), './global-pkg.json')
     )
     with open(pkg_file, 'r') as f:
         pkg = json.load(f)
