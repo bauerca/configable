@@ -32,7 +32,7 @@ car = Car({
     'units': 'metric'
 })
 
-print car.mpg();
+print car.mpg()
 ```
 
 ## Tutorial
@@ -66,11 +66,6 @@ cheetah = Animal({
 ```
 
 ### Inheritance
-
-When we subclass a Configable several times, we 
-Subclasses of Configable are equipped with their own `extend` method. The
-standard prototype chaining technique is used, so settings and other prototype
-properties are inherited as usual.
 
 When we subclass a subclass of Configable, we are doing some sort of
 specialization of the parent class.
@@ -185,7 +180,6 @@ class Type(Configable):
         choices=None,   # List of type expected in config obj
         kind=None       # Callable
     )
-});
 ```
 
 Additionally, you can use `setting` as a decorator.
@@ -200,7 +194,6 @@ class Type(Configable):
     )
     def setting_name(self, value):
         # Do something with value
-});
 ```
 
 The decorated function will be called immediately before the value is

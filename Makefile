@@ -10,8 +10,9 @@ release-js:
 	echo "release javascript"
 	cd js/ && node gen-package.js && npm publish && cd ..
 
-release-py:
+release-py: global-pkg.json
 	echo "release python"
+	cp $? python/
 	cd python/ && python setup.py sdist upload && cd ..
 
 release-git:

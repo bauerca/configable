@@ -21,7 +21,6 @@ class Setup(Configable):
             long_desc = pypandoc.convert('README.md', 'rst')
         except:
             pass
-        print 'running'
         setup(
             name=self.name,
             version=self.version,
@@ -38,9 +37,9 @@ class Setup(Configable):
 
 
 def main():
-    pkg_file = '../global-pkg.json'
+    pkg_file = './global-pkg.json'
     pkg_file = os.path.abspath(
-        os.path.join(pkg_file, os.path.dirname(__file__))
+        os.path.join(os.path.dirname(__file__), pkg_file)
     )
     with open(pkg_file, 'r') as f:
         pkg = json.load(f)
