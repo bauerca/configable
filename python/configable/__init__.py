@@ -137,7 +137,7 @@ class setting(object):
                     (self.name, self.choices)
                 )
         # Cast value to expected type
-        if self.kind is not None:
+        if value is not None and self.kind is not None:
             value = self.kind(value)
         setattr(obj, '_' + self.name, value)
         if self.init is not None:
