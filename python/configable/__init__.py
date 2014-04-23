@@ -116,10 +116,11 @@ class setting(object):
     A decorator that tags methods of a Config subclass that handle
     config values.
     """
-    def __init__(self, required=False, kind=None, default=None):
+    def __init__(self, required=False, kind=None, default=None, choices=None):
         self.required = required
         self.kind = kind
         self.default = default
+        self.choices = choices
         self.init = None
         self.name = str(id(self))
 
@@ -128,13 +129,18 @@ class setting(object):
             raise ValueError(
                 'Setting "%s" is required' % self.name
             )
-        else:
-            # Cast value to expected type
-            if self.kind is not None:
-                value = self.kind(value)
-            setattr(obj, '_' + self.name, value)
-            if self.init is not None:
-                self.init(obj, value)
+        if self.choices is not None:
+            if value not in self.choices:
+                raise ValueError(
+                    'Setting "%s" must be one of %s' %
+                    (self.name, self.choices)
+                )
+        # Cast value to expected type
+        if self.kind is not None:
+            value = self.kind(value)
+        setattr(obj, '_' + self.name, value)
+        if self.init is not None:
+            self.init(obj, value)
 
     def __get__(self, obj, objtype=None):
         if obj is None:

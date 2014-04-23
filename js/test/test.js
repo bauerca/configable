@@ -1,7 +1,9 @@
 var expect = require('expect.js');
-var configable = require('..');
-var Configable = configable.Configable;
-var setting = configable.setting;
+var cfg = require('..');
+var Configable = cfg.Configable;
+var ConfigableMap = cfg.ConfigableMap;
+var ConfigableArray = cfg.ConfigableArray;
+var setting = cfg.setting;
 
 describe('Configable', function() {
   afterEach(function() {
@@ -40,6 +42,18 @@ describe('Configable', function() {
     expect(function() {
       new Face({});
     }).to.throwException(/required/);
+  });
+
+  it('should respect choices', function() {
+    var Person = Configable.extend({
+      gender: setting({choices: ['male', 'female']})
+    });
+    expect(function() {
+      new Person({gender: 'mail'});
+    }).to.throwException(/one of/);
+    expect(function() {
+      new Person({gender: 'female'});
+    }).not.to.throwException();
   });
 
   it('should instantiate a subclass', function() {
@@ -89,5 +103,55 @@ describe('Configable', function() {
     });
     expect(acinonyx).to.be.an(Acinonyx);
     expect(acinonyx).not.to.be.a(Cheetah);
+  });
+});
+
+describe('ConfigableMap', function() {
+  it('should instantiate types', function() {
+    var Dog = Configable.extend({
+      breed: setting()
+    });
+    var Dogs = ConfigableMap.extend({
+      Type: Dog
+    });
+    var dogs = new Dogs({
+      gracie: {breed: 'golden'},
+      spot: {breed: 'terrier'}
+    });
+    expect(dogs.gracie).to.be.a(Dog);
+    expect(dogs.gracie.breed).to.be('golden');
+    expect(dogs.spot).to.be.a(Dog);
+    expect(dogs.spot.breed).to.be('terrier');
+  });
+
+  it('should fail if no Type property', function() {
+    expect(function() {
+      ConfigableMap.extend({});
+    }).to.throwException(/ConfigableMap/);
+  });
+});
+
+describe('ConfigableArray', function() {
+  it('should instantiate types', function() {
+    var Dog = Configable.extend({
+      breed: setting()
+    });
+    var Dogs = ConfigableArray.extend({
+      Type: Dog
+    });
+    var dogs = new Dogs([
+      {breed: 'golden'},
+      {breed: 'terrier'}
+    ]);
+    expect(dogs[0]).to.be.a(Dog);
+    expect(dogs[0].breed).to.be('golden');
+    expect(dogs[1]).to.be.a(Dog);
+    expect(dogs[1].breed).to.be('terrier');
+  });
+
+  it('should fail if no Type property', function() {
+    expect(function() {
+      ConfigableArray.extend({});
+    }).to.throwException(/ConfigableArray/);
   });
 });

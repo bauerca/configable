@@ -1,11 +1,23 @@
 'use strict';
 
+function err(msg) {
+  throw new Error(msg);
+}
+
 function isFunction(thing) {
   return typeof thing === 'function';
 }
 
+function isKind(thing, kind) {
+  return Object.prototype.toString.call(thing) === '[object ' + kind + ']';
+}  
+
 function isObject(thing) {
-  return Object.prototype.toString.call(thing) === '[object Object]';
+  return isKind(thing, 'Object');
+}
+
+function isArray(thing) {
+  return isKind(thing, 'Array');
 }
 
 function mergeInto(target, src) {
@@ -17,6 +29,26 @@ function mergeInto(target, src) {
   return target;
 }
 
+
+/**
+ *  Generic subclass generator. Assign this as a static property (on
+ *  the constructor) or call it from your own `extend` function like
+ *  `var Constructor = extend.call(this)` where `this` is your parent
+ *  class constructor.
+ */
+function extend(props) {
+  var Parent = this;
+  function Constructor() {
+    return Parent.apply(this, arguments);
+  }
+  var proto = Constructor.prototype = Object.create(
+    Parent.prototype
+  );
+  props && mergeInto(proto, props);
+  proto.constructor = Constructor;
+  Constructor.extend = Parent.extend;
+  return Constructor;
+}
 
 
 /**
@@ -36,7 +68,7 @@ function impliesSubclass(config, Subclass) {
     }
     return !!subtype;
   } else if (subtype !== undefined) {
-    throw new Error('Weird object for subtype property.');
+    err('Weird object for subtype property.');
   }
   return false;
 }
@@ -130,6 +162,8 @@ function Configable(config) {
  *    throw an error if the value is undefined.
  *  @property {*} default The default value for this setting if undefined
  *    on the configuration object.
+ *  @property {array<*>} choices If your setting is an enumerable, list all the
+ *    possible values here.
  *  @property {function} parse A function that receives the raw value and returns
  *    the parsed value (or throw an error). For example, `Number` may be a common choice
  *    here, since it tries to .The returned instance will replace the raw value
@@ -173,85 +207,32 @@ Configable.settings = {};
 Configable.prototype = {
   constructor: Configable,
 
-  _settings: {},
-
-  /**
-   *  This method is called when all settings have been loaded, checked, and
-   *  initialized.
-   *
-   *  @function
-   *  
-   */
-  postInit: null
+  _settings: {}
 };
 
-
-
-function defineSetting(proto, name) {
-  var valueName = '_' + name;
-
-  Object.defineProperty(proto, name, {
-    set: function(value) {
-      var setting = this._settings[name];
-      if (value === undefined) {
-        if (setting.required) {
-          throw new Error('Setting ' + name + ' is required.');
-        }
-        if (setting.default !== undefined) {
-          value = setting.default;
-        }
-      }
-      var parse = setting.parse;
-      if (parse) {
-        if (!isFunction(parse)) {
-          throw new Error('parse must be a function');
-        }
-        value = parse(value);
-      }
-      var kind = setting.kind; 
-      if (kind) {
-        if (!isFunction(kind)) {
-          throw new Error('kind must be a function');
-        }
-        // In case this setting is a Configable, make sure it knows it
-        // is not the root.
-        value = (
-          kind.prototype instanceof Configable ?
-          new kind(value, false) :
-          new kind(value)
-        );
-      }
-      if (setting.init) {
-        this[setting.init](value);
-      }
-      this[valueName] = value;
-    },
-
-    get: function() {
-      return this[valueName];
-    }
-
-  });
-}
-
-
-
-
-function extend(spec) {
+/**
+ *
+ *  Use this method to construct a Configable subclass.
+ *
+ *  @example
+ *  var Person = Configable.extend({
+ *    name: setting({required: true}),
+ *    height: setting({required: true, parse: Number}),
+ *    greet: function() {
+ *      return 'Hi, my name is ' + this.name + '.';
+ *    }
+ *  });
+ *
+ *  @param {object} spec Define your settings and regular prototype
+ *    properties on this object.
+ */
+Configable.extend = function(spec) {
   var Parent = this;
 
-  function Constructor() {
-    return Parent.apply(this, arguments);
-  }
+  var Constructor = extend.call(this);
+  var proto = Constructor.prototype;
 
-  var proto = Constructor.prototype = Object.create(
-    Parent.prototype
-  );
-
-  mergeInto(proto, {
-    constructor: Constructor,
-    _settings: mergeInto({}, Parent.prototype._settings)
-  });
+  proto._settings = mergeInto({}, Parent.prototype._settings);
 
   var name, property;
   for (name in spec) {
@@ -273,9 +254,71 @@ function extend(spec) {
     Parent.__Subclasses__ = [Constructor];
   }
 
-  Constructor.extend = extend;
   return Constructor;
+};
+
+
+/**
+ *  Turn a setting into a property descriptor on the prototype of the
+ *  Configable subclass. This assumes the setting options have been placed
+ *  in proto._settings[name]. See {@link Configable.extend}.
+ *
+ *  @param {object} proto The prototype of the Configable subclass.
+ *  @param {string} name The name of the setting property.
+ */
+function defineSetting(proto, name) {
+  var valueName = '_' + name;
+
+  Object.defineProperty(proto, name, {
+    set: function(value) {
+      var setting = this._settings[name];
+      if (value === undefined && setting.required) {
+        err('Setting ' + name + ' is required.');
+      }
+      var choices = setting.choices;
+      if (isArray(choices) && choices.indexOf(value) < 0) {
+        err('Setting ' + name + ' must be one of ' + choices.toString());
+      }
+      var parse = setting.parse;
+      if (parse) {
+        if (!isFunction(parse)) {
+          err('parse must be a function');
+        }
+        value = parse(value);
+      }
+      var kind = setting.kind; 
+      if (kind) {
+        if (!isFunction(kind)) {
+          err('kind must be a function');
+        }
+        value = new kind(value);
+      }
+      if (setting.init) {
+        var init = setting.init;
+        if (typeof init === 'string') {
+          this[setting.init](value);
+        } else if (isFunction(init)) {
+          init.call(this, value);
+        }
+      }
+      this[valueName] = value;
+    },
+
+    get: function() {
+      var setting = this._settings[name],
+          value = this[valueName];
+      if (value === undefined) {
+        return setting.default;
+      }
+      return value;
+    }
+
+  });
 }
+
+
+
+
 
 /**
  *  Use this function to define the settings your Configable subclass expects
@@ -304,26 +347,88 @@ function setting(options) {
 
 setting.required = false;
 
+
+function makeCollectionExtender(name) {
+  return function(props) {
+    if (!props.Type) {
+      err('Need to specify a "Type" property on a ' + name);
+    }
+    return extend.call(this, props);
+  };
+}
+  
+
 /**
+ *  @class
  *
- *  When constructing your Configable subclass, 
+ *  @param {object.<string, object>} config
+ */
+function ConfigableMap(config) {
+  var Type = this.Type;
+  for (var name in config) {
+    if (config.hasOwnProperty(name)) {
+      this[name] = new Type(config[name]);
+    }
+  }
+}
+
+/**
+ *  Create a subclass of ConfigableMap. The passed in prototype should have
+ *  a 'type' property which points to a {@link Configable} subclass. An instance
+ *  of this subclass will be created for every property on the configuration
+ *  object passed in to the {@link ConfigableMap} constructor.
  *
- *  When a setting is read from a configuration object, it is first
- *  set as a property on the instance, second checked against the conditions
- *  specified in the options argument of this function, and third passed
- *  to the handler callback.
+ *  WARNING: This is not a Configable. Defining [settings]{@link setting} on
+ *  the prototype will not do what you expect.
  *
  *  @function
  *
- *  @param {Object} spec Specify some common actions for a
- *    setting, like requiring it, setting a default value, and
- *    casting the value to a type of your choosing. Possible options
- *    are:
+ *  @param {object} spec Make sure to include a 'type' property that points
+ *    to a {@link Configable} class.
+ *
+ *  @returns {ConfigableMap}
  */
-Configable.extend = extend;
+ConfigableMap.extend = makeCollectionExtender('ConfigableMap');
 
+/**
+ *  @class
+ *
+ *  Subclasses of this are not actually arrays. They are objects with
+ *  integer keys and a length property. The length will be correct as
+ *  long as you don't add/remove elements (which is not easy anyway considering
+ *  the lack of push/pop methods).
+ *
+ *  @param {array<object>} config
+ */
+function ConfigableArray(config) {
+  var Type = this.Type;
+  for (var i = 0; i < config.length; i++) {
+    this[i] = new Type(config[i]);
+  }
+  this.length = config.length;
+}
+
+/**
+ *  Create a subclass of ConfigableArray. The passed in prototype should have
+ *  a 'Type' property which points to a {@link Configable} subclass. An instance
+ *  of this subclass will be created for every property on the configuration
+ *  object passed in to the {@link ConfigableMap} constructor.
+ *
+ *  WARNING: This is not a Configable. Defining [settings]{@link setting} on
+ *  the prototype will not do what you expect.
+ *
+ *  @function
+ *
+ *  @param {object} spec Make sure to include a 'Type' property that points
+ *    to a {@link Configable} class.
+ *
+ *  @returns {ConfigableArray} The class, not an instance.
+ */
+ConfigableArray.extend = makeCollectionExtender('ConfigableArray');
 
 module.exports = {
   Configable: Configable,
+  ConfigableMap: ConfigableMap,
+  ConfigableArray: ConfigableArray,
   setting: setting
 };

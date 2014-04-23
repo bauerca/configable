@@ -45,6 +45,14 @@ class Test(unittest.TestCase):
         with runner.assertRaises(ValueError) as cm:
             c = C({})
 
+    def test_choices(runner):
+        class C(Configable):
+            greeting = setting(choices=['hi'])
+
+        with runner.assertRaises(ValueError) as cm:
+            c = C({'greeting': 'hello'})
+        c = C({'greeting': 'hi'})
+
     def test_multiple_attrs(runner):
         class C(Configable):
             @setting()

@@ -1,10 +1,15 @@
+## Installation
 
-Let's get started with an example.
+```
+npm install configable
+```
+
+## Example
 
 ```js
-var configable = require('configable'),
-    Configable = configable.Configable,
-    setting = configable.setting;
+var cfg = require('configable'),
+    Configable = cfg.Configable,
+    setting = cfg.setting;
 
 var Car = Configable.extend({
     fuel_efficiency: setting({
@@ -12,18 +17,13 @@ var Car = Configable.extend({
         parse: Number
     }),
 
-    initFuelEff: function(value) {
-        this.mpg = this.units === 'english' ? value : 2.35214583 * value;
-        this.kpl = this.units === 'metric' ? value : 0.42514371 * value;
-    },
-
     units: setting({
         default: 'metric',
         choices: [
             'metric',
             'english'
         ]
-    })
+    }),
 
     mpg: function() {
         var eff = this.fuel_efficiency;
@@ -36,13 +36,12 @@ var car = new Car({
     'units': 'metric'
 });
 
-console.log(car.mpg);
-console.log(car.kpl);
+console.log(car.mpg());
 ```
 
-A Configable subclass is your standard javascript "class" with a few quirks.
+## Tutorial
 
-## Configable
+### Configable
 
 A new Configable subclass is created using the `Configable.extend` static method.
 Properties of the object passed into `extend` become simple properties of the
@@ -115,11 +114,11 @@ var cheetah = new Animal({
     'species': 'acinonyx jubatus'
 });
 
-console.log(cheetah instanceof Acinonyx); // true!
+console.log(cheetah instanceof Cheetah); // true!
 cheetah.speak(); // 'rawr'
 ```
 
-The Animal constructor was used to make an Acinonyx instance.
+The Animal constructor was used to make a Cheetah instance.
 
 So now you can have collections of animals in your config file:
 
@@ -135,9 +134,120 @@ So now you can have collections of animals in your config file:
 }
 ```
 
-and the correct subclass will be instantiated for each.
+and the correct subclass will be instantiated for each. Speaking of which...
 
 
-## setting
+### ConfigableMap
 
-A setting is registered with your Configable subclass by assigning `setting({...})`
+A ConfigableMap is simply a mapping between strings and Configables. The class is
+dead simple; have a look at the source if you want to see what's goin down.
+Or, take it all in with this juicy example:
+
+```js
+var cfg = require('configable'),
+    Configable = cfg.Configable,
+    ConfigableMap = cfg.ConfigableMap,
+    setting = cfg.setting;
+
+var Dog = Configable.extend({
+    breed: setting()
+});
+var Dogs = ConfigableMap.extend({Type: Dog});
+
+var dogs = new Dogs({
+    gracie: {breed: 'golden'},
+    spot: {breed: 'terrier'}
+});
+
+console.log(dogs.gracie instanceof Dog); // true!
+```
+
+Make sure you assign a `Type` property to a Configable class in the
+ConfigableMap prototype! You get all the benefits of subclass instantiation 
+
+### ConfigableArray
+
+Given [ConfigableMap](#configablemap), you should be satisfied with an example,
+
+```js
+var cfg = require('configable'),
+    Configable = cfg.Configable,
+    ConfigableArray = cfg.ConfigableArray,
+    setting = cfg.setting;
+
+var Dog = Configable.extend({
+    breed: setting()
+});
+var Dogs = ConfigableArray.extend({Type: Dog});
+
+var dogs = new Dogs([
+    {breed: 'golden'},
+    {breed: 'terrier'}
+]);
+
+console.log(dogs[0] instanceof Dog); // true!
+```
+
+
+### setting
+
+This is a function defined on the module.
+
+```js
+var setting = require('configable').setting;
+```
+
+Call this function and assign the result to a property of the prototype passed
+in to `Configable.extend(...)` (see numerous examples above). Generically (where
+shown option values are the defaults),
+
+```js
+var Type = Configable.extend({
+    setting_name: setting({
+        required: false,      // Boolean
+        default: undefined,   // Instance of expected type (see 'kind' below)
+        choices: undefined,   // Array of type expected in config obj
+        parse: undefined,     // Function (e.g. Number)
+        kind: undefined,      // Function (e.g. Date); called with new
+        init: undefined       // Function (called with Configable instance as 'this')
+    })
+});
+```
+
+The following are short explanations of the setting options.
+
+#### required {boolean}
+
+If set to true, instantiation of the containing Configable subclass will fail
+horribly if the setting is undefined on the configuration object.
+
+#### default {\*}
+
+Pretty self-explanatory. You probably want [required](#required) to be `false` if
+you are supplying a default setting value. The type of the default value should be
+the type expected as a result of applying all setting options. This means
+your default value should be the same type as that returned by application of the
+[parse](#parse-function) or [kind](#kind-function) function, if specified.
+
+#### choices {array&lt;\*&gt;}
+
+If your settings values are restricted to a small set, list them here. Configable
+instantiation will fail if the *raw* value is not in this set.
+
+#### parse {function}
+
+The raw value from the configuration object is run through this function; therefore,
+it should accept a single value and return the transformed value or throw an
+error. Parsing happens before [kind](#kind-function).
+
+#### kind {function}
+
+After [parsing](#parse-function), the value will be cast to this type using
+`value = new kind(value)`. A common example would be `Date`.
+
+#### init {function}
+
+Finally, the init function is called. This is different from [parse](#parse-function)
+and [kind](#kind-function) in that `this` is set to the Configable instance
+inside this function. You should *not* try to access other settings from inside this
+function as they may not have been loaded yet.

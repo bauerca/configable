@@ -1,7 +1,7 @@
 # Configable
 
 Configable is more paradigm than library, encouraging you to write concise,
-extensible, and reusable code by inventing a declarative configuration-like
+extensible, and reusable code by inventing a declarative configuration-based
 language for your app.
 
 The tangible part of Configable strives to help you structure your code
@@ -13,12 +13,10 @@ including:
 - OOP
 - Inheritance
 
+## APIs
 
-## Installation
-
-### Python
-
-`pip install configable`
+- [Javascript](js)
+- [Python](python)
 
 
 ## Motivation and philosophy
@@ -104,127 +102,7 @@ Hash tables (groupings of key/value pairs) in your config file are translated
 into objects with attributes in your favorite programming language.
 Configable adds candy like type checking and inheritance.
 
-## Tutorials
+## Give me the docs!
 
 - [Javascript](js)
 - [Python](python)
-
-### Python
-
-Let's see what Configable actually does for you in Python (the only language
-supported right now):
-
-```python
-from configable import Configable, setting
-
-class Car(Configable):
-    @setting(required=True, kind=float)
-    def fuel_efficiency(self, value):
-        self.mpg = value if self['units'] == 'english' else 2.35214583 * value
-        self.kpl = value if self['units'] == 'metric' else 0.42514371 * value
-
-    @setting(default='metric')
-    def units(self, value):
-        pass
-
-
-car = Car({
-    'fuel_efficiency': 30,
-    'units': 'english'
-})
-
-print car.mpg
-print car.kpl
-```
-
-What a delightfully pointless library. The only thing Configable is really
-helping with is some requirement and type checking all wrapped up in some
-fancy decorator syntax.
-
-You usually don't override `__init__` in a `Configable` subclass. A
-`Configable` expects to be initialized by a python dictionary, which was
-probably loaded from a config file.
-
-Here's something a little more helpful.
-
-```python
-from configable import Configable, ConfigableMap, setting
-
-class Car(Configable):
-    @setting(required=True, kind=float)
-    def fuel_efficiency(self, value):
-        self.mpg = value if self['units'] == 'english' else 2.35214583 * value
-        self.kpl = value if self['units'] == 'metric' else 0.42514371 * value
-
-    @setting(default='metric')
-    def units(self, value):
-        pass
-
-class FamilyCars(ConfigableMap):
-    TYPE = Car
-
-cars = FamilyCars({
-    dad: {
-        'fuel_efficiency': 30,
-        'units': 'english'
-    },
-    mom: {
-        'fuel_efficiency': 30,
-        'units': 'english'
-    }
-})
-
-assert isinstance(cars['dad'], Car)
-```
-
-So Configable did some iteration and type instantiation for ya. There is
-also a `ConfigableArray` class, which expects to be instantiated with a
-python list of dictionaries, and expects a `TYPE` class property just like
-`ConfigableMap`.
-
-How about inheritance?
-
-```python
-from configable import Configable, ConfigableMap, setting
-
-class Car(Configable):
-    @setting(required=True, kind=float)
-    def fuel_efficiency(self, value):
-        self.mpg = value if self['units'] == 'english' else 2.35214583 * value
-        self.kpl = value if self['units'] == 'metric' else 0.42514371 * value
-
-    @setting(default='metric')
-    def units(self, value):
-        pass
-
-class ElectricCar(Car):
-    SUBTYPE = {'type': 'electric'}
-
-    @setting(required=True, kind=float)
-    def fuel_efficiency(self, value):
-        super(ElectricCar, self).fuel_efficiency(value)
-        self.mpge = self.mpg
-        self.kple = self.kpl
-
-class FamilyCars(ConfigableMap):
-    TYPE = Car
-
-cars = FamilyCars({
-    dad: {
-        'fuel_efficiency': 30,
-        'units': 'english'
-    },
-    mom: {
-        'type': 'electric',
-        'fuel_efficiency': Inf
-    }
-})
-
-assert isinstance(cars['mom'], ElectricCar)
-```
-
-Now that's a little more helpful. Configable helps you use inheritance in your
-configuration data structures. Because mom's car specified a 'type' of
-'electric', an `ElectricCar` was instantiated, rather than a plain old `Car`.
-
-
