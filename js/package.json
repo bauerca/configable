@@ -1,6 +1,6 @@
 {
   "name": "configable",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Don't repeat yourself. Configure everything.",
   "main": "index.js",
   "scripts": {
