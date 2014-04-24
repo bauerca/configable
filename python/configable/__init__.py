@@ -37,6 +37,12 @@ class Configable(ConfigableBase):
     """
 
     def __new__(cls, config, *args, **kwargs):
+        if not isinstance(config, dict):
+            raise ValueError(
+                'Instantiating %s: config must be a dict. Got type %s with value %s.' %
+                (cls.__name__, type(config), str(config))
+            )
+
         for subcls in cls.__subclasses__():
             subtype = getattr(subcls, 'SUBTYPE', None)
             if isinstance(subtype, dict):

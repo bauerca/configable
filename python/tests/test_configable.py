@@ -27,6 +27,18 @@ class Test(unittest.TestCase):
         runner.assertTrue(s.a == 1)
         runner.assertTrue(s.b == 1)
 
+    def test_config_not_dict(runner):
+        class MyConfig(Configable):
+            pass
+        
+        with runner.assertRaises(ValueError) as cm:
+            MyConfig('hello fail')
+
+        runner.assertRegexpMatches(
+            cm.exception.message,
+            'MyConfig'
+        )
+
     def test_missing_optional_attr(runner):
         class C(Configable):
             @setting()
