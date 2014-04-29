@@ -272,8 +272,12 @@ function defineSetting(proto, name) {
   Object.defineProperty(proto, name, {
     set: function(value) {
       var setting = this._settings[name];
-      if (value === undefined && setting.required) {
-        err('Setting ' + name + ' is required.');
+      if (value === undefined) {
+        if (setting.required) {
+          err('Setting ' + name + ' is required.');
+        } else if (setting.default !== undefined) {
+          value = setting.default;
+        }
       }
       var choices = setting.choices;
       if (isArray(choices) && choices.indexOf(value) < 0) {
@@ -305,12 +309,7 @@ function defineSetting(proto, name) {
     },
 
     get: function() {
-      var setting = this._settings[name],
-          value = this[valueName];
-      if (value === undefined) {
-        return setting.default;
-      }
-      return value;
+      return this[valueName];
     }
 
   });

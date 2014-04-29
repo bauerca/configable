@@ -94,9 +94,14 @@ class Test(unittest.TestCase):
             raise ValueError('cast failed')
     
     def test_default(runner):
+        class SpecialString(str):
+            pass
+
         class C(Configable):
-            @setting(default='boosh')
+            @setting(kind=SpecialString, default='boosh')
             def mighty(self, value):
+                runner.assertIsInstance(value, SpecialString)
+                runner.assertEqual(value, 'boosh')
                 pass
 
         c = C({})

@@ -132,10 +132,13 @@ class setting(object):
         self.decorator = False
 
     def __set__(self, obj, value):
-        if value is None and self.required:
-            raise ValueError(
-                'Setting "%s" is required' % self.name
-            )
+        if value is None:
+            if self.required:
+                raise ValueError(
+                    'Setting "%s" is required' % self.name
+                )
+            elif self.default is not None:
+                value = self.default
         if self.choices is not None:
             if value not in self.choices:
                 raise ValueError(
@@ -155,10 +158,7 @@ class setting(object):
             # the class (not instance; accessing the setting on an instance
             # will get/set the value of the setting):
             return self
-        value = getattr(obj, '_' + self.name, None)
-        if value is None:
-            return self.default
-        return value
+        return getattr(obj, '_' + self.name, None)
 
     def __call__(self, initOrObj, value=None):
         if self.decorator:

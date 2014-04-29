@@ -205,7 +205,7 @@ shown option values are the defaults),
 var Type = Configable.extend({
     setting_name: setting({
         required: false,      // Boolean
-        default: undefined,   // Instance of expected type (see 'kind' below)
+        default: undefined,   // Raw value
         choices: undefined,   // Array of type expected in config obj
         parse: undefined,     // Function (e.g. Number)
         kind: undefined,      // Function (e.g. Date); called with new
@@ -224,10 +224,10 @@ horribly if the setting is undefined on the configuration object.
 #### default {\*}
 
 Pretty self-explanatory. You probably want [required](#required) to be `false` if
-you are supplying a default setting value. The type of the default value should be
-the type expected as a result of applying all setting options. This means
-your default value should be the same type as that returned by application of the
-[parse](#parse-function) or [kind](#kind-function) function, if specified.
+you are supplying a default setting value. The default value should be a *raw* value,
+i.e. of a type expected in the configuration object (fundamental, like
+integer, string, object, array, etc).
+The default, if taken, will be run through all the following setting checks and ops.
 
 #### choices {array&lt;\*&gt;}
 

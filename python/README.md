@@ -39,7 +39,7 @@ print car.mpg()
 
 ### Configable
 
-Create configable classes by subclassing Configable and adding [settings](#setting).
+Create configable classes by subclassing Configable and adding [settings](https://github.com/bauerca/configable/python#setting).
 Here's a very simple example. For introductory purposes,
 the settings are specified without options; this means they are optional, and
 their values are taken as is from whatever configuration object instantiates
@@ -56,7 +56,7 @@ class Animal(Configable):
 A Configable expects a single argument in its constructor: a *configuration object*.
 A *config object* is just a plain old python dictionary, probably loaded from a
 JSON/YAML/etc config file. It should contain properties that correspond to the 
-[settings](#setting) defined on the Configable it is instantiating.
+[settings](https://github.com/bauerca/configable/python#setting) defined on the Configable it is instantiating.
 
 ```python
 cheetah = Animal({
@@ -146,7 +146,7 @@ ConfigableMap prototype! You get all the benefits of subclass instantiation
 
 ### ConfigableArray
 
-Given [ConfigableMap](#configablemap), you should be satisfied with an example,
+Given [ConfigableMap](https://github.com/bauerca/configable/python#configablemap), you should be satisfied with an example,
 
 ```python
 from configable import Configable, ConfigableArray, setting
@@ -197,7 +197,7 @@ class Type(Configable):
 ```
 
 The decorated function will be called immediately before the value is
-set on the instance (after [kind](#kind-callable) is called).
+set on the instance (after [kind](https://github.com/bauerca/configable/python#kind-callable) is called).
 You should *not* try to access other settings from inside this
 function as they may not have been loaded yet. If you need to call the parent
 class decorated function, you must use the following syntax,
@@ -224,11 +224,11 @@ horribly if the setting is undefined on the configuration object.
 
 #### `default {*}`
 
-Pretty self-explanatory. You probably want [required](#required) to be `false` if
-you are supplying a default setting value. The type of the default value should be
-the type expected as a result of applying all setting options. This means
-your default value should be the same type as that returned by application of the
-[parse](#parse-function) or [kind](#kind-function) function, if specified.
+Pretty self-explanatory. You probably want [required](https://github.com/bauerca/configable/python#required) to be `false` if
+you are supplying a default setting value. The default value should be a *raw* value,
+i.e. of a type expected in the configuration object (fundamental, like
+int, str, dict, list, etc).
+The default, if taken, will be run through all the following setting checks and ops.
 
 #### `choices {iterable<*>}`
 
