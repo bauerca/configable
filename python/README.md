@@ -102,7 +102,23 @@ cheetah.speak() // 'rawr'
 
 The Animal constructor was used to make a Cheetah instance.
 
-So now you can have collections of animals in your config file:
+`SUBTYPE` can also be specified as a staticmethod to handle more general
+conditions:
+
+```python
+class Cheetah(Animal):
+    @staticmethod
+    def SUBTYPE(config):
+        return config.get('species') == 'acinonyx jubatus'
+
+    def speak(self):
+        print 'rawr' # hard-coded sound
+```
+
+In this case, the `SUBTYPE` function should return True if its class should be
+instantiated instead of the parent class for this configuration object.
+
+Now you can have collections of animals in your config file:
 
 ```json
 {
