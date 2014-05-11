@@ -37,15 +37,14 @@ class Configable(ConfigableBase):
     """
 
     def __new__(cls, config, *args, **kwargs):
-        if not isinstance(config, dict):
-            raise ValueError(
-                'Instantiating %s: config must be a dict. Got type %s with value %s.' %
-                (cls.__name__, type(config), str(config))
-            )
-
         for subcls in cls.__subclasses__():
             subtype = getattr(subcls, 'SUBTYPE', None)
             if isinstance(subtype, dict):
+                if not isinstance(config, dict):
+                    raise ValueError(
+                        'Instantiating %s: config must be a dict. Got type %s with value %s.' %
+                        (cls.__name__, type(config), str(config))
+                    )
                 match = True
                 for name, value in subtype.iteritems():
                     config_value = config.get(name)
@@ -56,16 +55,20 @@ class Configable(ConfigableBase):
                     # The following should call this __new__ again with
                     # cls == subcls.
                     return subcls(config, *args, **kwargs)
+            elif inspect.isfunction(subtype):
+                if subtype(config):
+                    return subcls(config, *args, **kwargs)
 
         return super(Configable, cls).__new__(
             cls, config, *args, **kwargs
         )
 
     def __init__(self, config):
-        self._settings = inspect.getmembers(self.__class__, predicate=issetting)
-        for name, setting in self._settings:
-            setting.name = name
-            setattr(self, name, config.get(name))
+        if isinstance(config, dict):
+            self._settings = inspect.getmembers(self.__class__, predicate=issetting)
+            for name, setting in self._settings:
+                setting.name = name
+                setattr(self, name, config.get(name))
 
     def issetting(self, name):
         return name in self._settings

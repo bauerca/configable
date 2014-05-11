@@ -27,18 +27,6 @@ class Test(unittest.TestCase):
         runner.assertTrue(s.a == 1)
         runner.assertTrue(s.b == 1)
 
-    def test_config_not_dict(runner):
-        class MyConfig(Configable):
-            pass
-        
-        with runner.assertRaises(ValueError) as cm:
-            MyConfig('hello fail')
-
-        runner.assertRegexpMatches(
-            cm.exception.message,
-            'MyConfig'
-        )
-
     def test_missing_optional_attr(runner):
         class C(Configable):
             @setting()
@@ -139,6 +127,49 @@ class Test(unittest.TestCase):
             'dad': {'name': 'Hal'},
             'mom': {'name': 'Lois'}
         })
+
+    #def test_location_aware(runner):
+    #    class D(Configable):
+    #        pass
+    #    class C(Configable):
+    #        d = setting(kind=D)
+    #    class B(Configable):
+    #        c = setting(kind=C)
+    #    class A(Configable):
+    #        b = setting(kind=B)
+
+    #    a = A({'b': {'c': {'d': {}}}})
+    #    d = a.b.c.d
+    #    runner.assertEqual(d.config_path('.'), 'b.c.d')
+
+    #def test_location_aware_map(runner):
+    #    class D(Configable):
+    #        pass
+
+    #    class C(ConfigableMap):
+    #        TYPE = D
+
+    #    class B(Configable):
+    #        c = setting(kind=C)
+
+    #    class A(Configable):
+    #        b = setting(kind=B)
+
+    #    a = A({'b': {'c': {'d1': {}, 'd2': {}}}})
+    #    d1 = a.b.c['d1']
+    #    runner.assertEqual(d1.config_path('.'), 'b.c.d1')
+
+    def test_configable_string(runner):
+        class String(Configable):
+            pass
+
+        class SString(String):
+            @staticmethod
+            def SUBTYPE(string):
+                return string[0] == 'S'
+
+        ss = String('S string!')
+        runner.assertIsInstance(ss, SString)
 
     def test_configable_inheritance(runner):
         class Animal(Configable):
